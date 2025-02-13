@@ -213,7 +213,7 @@ This project is **open-source** and free to use under the MIT License.
 ---
 
 ## 👨‍💻 Contributors
-- **Your Name** - Backend Developer
+- **Jude** - Backend Developer
 
 For issues, feel free to **open an issue** or **contribute**! 🚀
 
