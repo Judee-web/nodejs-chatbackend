@@ -6,19 +6,28 @@ const pubsub = new PubSub();
 const MESSAGE_SENT = "MESSAGE_SENT";
 
 const resolvers = {
-  Query: {
-    messages: async () => await prisma.message.findMany(),
-    users: async () => await prisma.user.findMany(), // ✅ Add users query
-  },
+    Query: {
+        messages: async (_, __, { user }) => {
+          if (!user) throw new Error("Authentication required");
+      
+          return await prisma.message.findMany({
+            where: { senderId: user.userId },  // Fetch only messages sent by the user
+            orderBy: { timestamp: "desc" },
+          });
+        },
+      },
+      
   Mutation: {
     sendMessage: async (_, { senderId, content }) => {
-      const newMessage = await prisma.message.create({
-        data: {
-          senderId,
-          content,
-        },
-      });
+        if (!user) throw new Error("Authentication required");
 
+        const newMessage = await prisma.message.create({
+          data: {
+            senderId: user.userId,  // Use authenticated user ID
+            content,
+          },
+        });
+    
       pubsub.publish(MESSAGE_SENT, { messageSent: newMessage });
       return newMessage;
     },
@@ -30,9 +39,14 @@ const resolvers = {
   },
   Subscription: {
     messageSent: {
-      subscribe: () => pubsub.asyncIterator(MESSAGE_SENT),
+      subscribe: (_, __, { user }) => {
+        if (!user) throw new Error("Authentication required");
+  
+        return pubsub.asyncIterator(MESSAGE_SENT);
+      },
     },
   },
+  
 };
 
 module.exports = resolvers;
